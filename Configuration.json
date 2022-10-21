@@ -1,0 +1,59 @@
+{
+    "KraftModuleConfigurationSettings": {
+      "NodeSetSettings": {
+        "SourceLoaderMapping": {
+          "NodesDataIterator": {
+            "NodesDataIteratorConf": {
+              "Name": "DefaultNodeTreeIterator",
+              "ImplementationAsString": "Ccf.Ck.SysPlugins.Iterators.DataNodes.DataNodesImp, Ccf.Ck.SysPlugins.Iterators.DataNodes",
+              "InterfaceAsString": "Ccf.Ck.SysPlugins.Interfaces.IDataIteratorPlugin, Ccf.Ck.SysPlugins.Interfaces",
+              "Default": true,
+              "CustomSettings": {}
+            },
+            "NodesDataLoader": [
+              {
+                "Name": "SQlite",
+                "ImplementationAsString": "Ccf.Ck.SysPlugins.Data.Db.ADO.GenericSQLite, Ccf.Ck.SysPlugins.Data.Db.ADO",
+                "InterfaceAsString": "Ccf.Ck.SysPlugins.Interfaces.IDataLoaderPlugin, Ccf.Ck.SysPlugins.Interfaces",
+                "Default": true,
+                "CustomSettings": {
+                  "ConnectionString": "Data Source=@moduleroot@/Data/bkjs6.sqlite;"
+                }
+              },
+              {
+                "Name": "Scripter",
+                "ImplementationAsString": "Ccf.Ck.SysPlugins.Data.Scripter.ScripterImp, Ccf.Ck.SysPlugins.Data.Scripter",
+                "InterfaceAsString": "Ccf.Ck.SysPlugins.Interfaces.IDataLoaderPlugin, Ccf.Ck.SysPlugins.Interfaces",
+                "Default": true,
+                "CustomSettings": {
+                  "libraries": "internalcalls"
+                }
+              } 
+            ]
+          },
+          "ViewLoader": [
+            {
+              "Name": "HtmlViewLoader",
+              "ImplementationAsString": "Ccf.Ck.SysPlugins.Views.Html.HtmlViewImp, Ccf.Ck.SysPlugins.Views.Html",
+              "InterfaceAsString": "Ccf.Ck.SysPlugins.Interfaces.ISystemPlugin, Ccf.Ck.SysPlugins.Interfaces",
+              "Default": true,
+              "CustomSettings": {}
+            }
+          ],
+          "LookupLoader": [],
+          "ResourceLoader": [],
+          "CustomPlugin": [
+            {
+              "Name": "NodeScripter",
+              "ImplementationAsString": "Ccf.Ck.NodePlugins.Scripter.NodeScripterImp, Ccf.Ck.NodePlugins.Scripter",
+              "InterfaceAsString": "Ccf.Ck.SysPlugins.Interfaces.INodePlugin, Ccf.Ck.SysPlugins.Interfaces",
+              "Default": true,
+              "CustomSettings": {
+                "libraries": "internalcalls"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
