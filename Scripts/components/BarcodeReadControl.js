@@ -9,14 +9,14 @@
         Base.apply(this, arguments);
     }
     BarcodeReadControl.Inherit(Base,"BarcodeReadControl")
-        .Implment(ICustomParameterizationStdImpl,"formats")
-        .ImplementReadProperty("functional", new InitializeBooleanProperty("Indicates if the control is functional under the current conditions.", false))
+        .Implement(ICustomParameterizationStdImpl,"formats")
+        .ImplementReadProperty("functional", new InitializeBooleanParameter("Indicates if the control is functional under the current conditions.", false))
         .ImplementProperty("formats", new InitializeArray("List of formats to detect, default is qr_code, can be coma separated string too.",["qr_code"]))
         .ImplementReadProperty("detector", new InitializeArray("Barcode detector when active.",null))
         .ImplementReadProperty("codes", new InitializeArray("Last detected codes - initially empty"))
         .ImplementProperty("source", new Initialize("Source to observe when asked."),null,function(oval, newval) {
             if (newval != null) {
-                this.callAsync(onDetectSource);
+                this.callAsync(this.onDetectSource);
             }
         }, true);
         
@@ -62,7 +62,7 @@
 
     //#region Ready/Unready
     BarcodeReadControl.prototype.get_isactive = function() {
-        return this.detector() != null;
+        return this.get_detector() != null;
     }
     BarcodeReadControl.prototype.Activate = function() {
         if (!this.get_functional()) return false;
