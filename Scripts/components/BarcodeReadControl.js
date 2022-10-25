@@ -14,7 +14,11 @@
         .ImplementProperty("formats", new InitializeArray("List of formats to detect, default is qr_code, can be coma separated string too.",["qr_code"]))
         .ImplementReadProperty("detector", new InitializeArray("Barcode detector when active.",null))
         .ImplementReadProperty("codes", new InitializeArray("Last detected codes - initially empty"))
-        .ImplementProperty("source", new Initialize("Source to observe when asked."));
+        .ImplementProperty("source", new Initialize("Source to observe when asked."),null,function(oval, newval) {
+            if (newval != null) {
+                this.callAsync(onDetectSource);
+            }
+        }, true);
         
     BarcodeReadControl.prototype.detectedevent = new InitializeEvent("Fired when something is detected (successfully), but not when cleared and so on.");
 
