@@ -76,14 +76,18 @@
         if (!this.get_functional()) return false;
         this.clearDetected();
         this.set_status("Activating ...");
-        if (this.get_detector() != null) {
+        if (this.get_detector() == null) {
             this.$detector = new BarcodeDetector({
                 formats: this.get_formats()
             });
-            this.set_status("Activating ... Active");
+            if (this.get_detector() != null) {
+                this.set_status("Activating ... Active");
+            } else {
+                this.set_status("Activating ... Failed to create");
+            }
             return true;
         } else {
-            this.set_status("Activating ... Failed");
+            this.set_status("Activating ... Already exists");
             return false;
         }
     }
