@@ -1,5 +1,14 @@
 (function() {
 
+    // function BarcodeDetector() {
+
+    // }
+    // BarcodeDetector.prototype.detect = function() {
+    //     return new Promise(function(resolve, reject) {
+    //         reject("fake detector");
+    //     });
+    // }
+    // window.BarcodeDetector = BarcodeDetector;
     var Base = Class("Base");
 
     /**
@@ -34,6 +43,7 @@
             this.$status = "BarcodeDetector is available. The control is functional.";
           }else {
             this.$functional = false;
+            this.$status = "BarcodeDetector is NOT available. The control is NOT functional.";
           }
           return this.get_functional();
     }
