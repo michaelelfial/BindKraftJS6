@@ -11,7 +11,7 @@
     BarcodeReadControl.Inherit(Base,"BarcodeReadControl")
         .Implement(ICustomParameterizationStdImpl,"formats","autoactivate")
         .ImplementReadProperty("functional", new InitializeBooleanParameter("Indicates if the control is functional under the current conditions.", false))
-        .ImplementReadProperty("autoactivate", new InitializeBooleanParameter("If passed as a parameter activates the control on creation. Should not be used in bindings!", false))
+        .ImplementReadProperty("autoactivate", new InitializeBooleanParameter("If passed as a parameter activates the control on creation. Should not be used in bindings!", true))
         .ImplementProperty("formats", new InitializeArray("List of formats to detect, default is qr_code, can be coma separated string too.",["qr_code"]))
         .ImplementReadProperty("detector", new Initialize("Barcode detector when active.",null))
         .ImplementProperty("source", new Initialize("Source to observe when asked."),null,function(oval, newval) {
@@ -40,7 +40,7 @@
     BarcodeReadControl.prototype.init = function() {
         this.$testEnvironment();
         if (this.get_functional() && this.get_autoactivate()) {
-            this.ExecAfterFinalInit([], _ => {
+            this.ExecAfterFinalInit(function() {
                 this.Activate();
             })
         }
