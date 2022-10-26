@@ -9,7 +9,7 @@
         Base.apply(this, arguments);
     }
     BarcodeReadControl.Inherit(Base,"BarcodeReadControl")
-        .Implement(ICustomParameterizationStdImpl,"formats")
+        .Implement(ICustomParameterizationStdImpl,"formats","autoactivate")
         .ImplementReadProperty("functional", new InitializeBooleanParameter("Indicates if the control is functional under the current conditions.", false))
         .ImplementReadProperty("autoactivate", new InitializeBooleanParameter("If passed as a parameter activates the control on creation. Should not be used in bindings!", false))
         .ImplementProperty("formats", new InitializeArray("List of formats to detect, default is qr_code, can be coma separated string too.",["qr_code"]))
@@ -35,15 +35,15 @@
           }else {
             this.$functional = false;
           }
-          if (this.$functional && this.get_autoactivate()) {
-                this.ExecAfterFinalInit([], _ => {
-                    this.Activate();
-                })
-          }
           return this.get_functional();
     }
     BarcodeReadControl.prototype.init = function() {
         this.$testEnvironment();
+        if (this.get_functional() && this.get_autoactivate()) {
+            this.ExecAfterFinalInit([], _ => {
+                this.Activate();
+            })
+        }
     }
     BarcodeReadControl.prototype.$detected = new InitializeArray("This array will be changed as new detection occurs");
     BarcodeReadControl.prototype.clearDetected = function() {
