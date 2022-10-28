@@ -269,7 +269,7 @@
         });
     }
     var videoSource = this.get_mediaDeviceIds()[0];
-    constraints = {
+    var constraints = {
       video: { deviceId: videoSource ? { exact: videoSource } : undefined }
     };
     var self = this;
