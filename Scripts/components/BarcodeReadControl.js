@@ -73,6 +73,10 @@
     .ImplementProperty(
       "zoomLevel",
       new InitializeNumericParameter("Current zoom level", 0)
+    )
+    .ImplementProperty(
+      "isdetected",
+      new InitializeBooleanParameter("If something detected", false)
     );
 
   BarcodeReadControl.prototype.detectedevent = new InitializeEvent(
@@ -188,12 +192,14 @@
             .get_detector()
             .detect(img)
             .then((barcodes) => {
-              barcodes.forEach((barcode) => console.log(barcode.rawValue));
+              //barcodes.forEach((barcode) => console.log(barcode.rawValue));
               self.clearDetected();
               if (Array.isArray(barcodes) && barcodes.length > 0) {
                 self.set_status(
                   `Detecting ... Trying ... Detected ${barcodes.length} codes`
                 );
+                console.log("Barcodes:", JSON.stringify(barcodes));
+                this.$isdetected = true;
                 self.$detected = Array.createCopyOf(barcodes);
               }
               self.detectedevent.invoke(self, barcodes);
@@ -230,96 +236,99 @@
   //#endregion
 
   //#region Scanning from the camera
-  BarcodeReadControl.prototype.initScanning = function () {
-    var self = this;
-    navigator.mediaDevices
-      .enumerateDevices()
-      .then(this.initDevices.bind(self))
-      .catch((error) => {
-        console.log("enumerateDevices() error: ", error);
-      })
-      .then(this.getStream.bind(self));
-  };
+  BarcodeReadControl.prototype.initScanning = async function () {
 
-  BarcodeReadControl.prototype.initDevices = function (deviceInfos) {
-    for (var i = 0; i !== deviceInfos.length; ++i) {
-      var deviceInfo = deviceInfos[i];
-      if (deviceInfo.kind === "videoinput") {
-        if (!Array.isArray(this.get_mediaDeviceIds())) {
-          this.set_mediaDeviceIds([]);
-        }
-        var cap = deviceInfo.getCapabilities();
-        if (cap && cap.facingMode)
-        {
-            if (cap.facingMode == 'environment')
-            {
-                this.$mediaDeviceIds.push(deviceInfo.deviceId);
-            }
-        }
-      }
-    }
-  };
-
-  BarcodeReadControl.prototype.getStream = function () {
-    if (this.get_mediaStream()) {
-      this.get_mediaStream()
-        .getTracks()
-        .forEach((track) => {
-          track.stop();
-        });
-    }
-    var videoSource = this.get_mediaDeviceIds()[0];
     var constraints = {
-      video: { deviceId: videoSource ? { exact: videoSource } : undefined }
+      audio: false,
+      video: { 
+          //deviceId: videoSource ? { exact: videoSource } : undefined,
+          facingMode: { exact: "environment" }
+        }
     };
-    var self = this;
-    navigator.mediaDevices
-      .getUserMedia(constraints)
-      .then(this.gotStream.bind(self))
-      .catch((error) => {
-        console.log("getUserMedia error: ", error);
-      });
+
+    try {
+      var stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      this.set_mediaStream(stream);
+      this.get_videoObj().srcObject = stream;
+      this.set_imageCapture(new ImageCapture(stream.getVideoTracks()[0]));
+      /* use the stream */
+    } catch (err) {
+      /* handle the error */
+    }
   };
 
-  BarcodeReadControl.prototype.gotStream = function (stream) {
-    console.log("getUserMedia() got stream: ", stream);
-    this.set_mediaStream(stream);
-    this.get_videoObj().srcObject = stream;
-    this.set_imageCapture(new ImageCapture(stream.getVideoTracks()[0]));
-    this.getCapabilities();
-  };
-
-  BarcodeReadControl.prototype.getCapabilities = function () {
-    this.get_imageCapture()
-      .getPhotoCapabilities()
-      .then(function (capabilities) {
-        console.log("Camera capabilities:", capabilities);
-        // if (capabilities.zoom.max > 0) {
-        //   this.set_zoomLevel(capabilities.zoom.current);
-        // }
-      })
-      .catch(function (error) {
-        console.log("getCapabilities() error: ", error);
-      });
-  };
-
-  BarcodeReadControl.prototype.onScanning = function () {
+  BarcodeReadControl.prototype.onScanning = async function () {
     //Show the div with canvas and initialize the chain
     //this.get_videoObj().classList.remove('hidden');
-    this.initScanning();
+    await this.initScanning();
+    for (let index = 0; index < 1000; index++) {
+      if (!this.$isdetected)
+      {
+        console.log("Counter: " + index);
+        await this.onTakePhoto();
+      }    
+      else{
+        return;
+      }  
+    }
+    console.log("Nothing detected");
   };
 
-  BarcodeReadControl.prototype.onTakePhoto = function () {
-    var self = this;
-    this.get_imageCapture()
-      .takePhoto()
-      .then(function (blob) {
-        console.log("Took photo:", blob);
-        self.detect(blob);
-      })
-      .catch(function (error) {
-        console.log("takePhoto() error: ", error);
-      });
+  BarcodeReadControl.prototype.onTakePhoto = async function () {
+    // try {
+    //   var imageCapture = this.get_imageCapture();
+    //   const promise = imageCapture.takePhoto();
+
+    //   if (!promise && !(imageCapture.track.readyState != 'live' || !imageCapture.track.enabled || imageCapture.track.muted)) {
+    //     promise.then(blob => {
+    //       if (blob)
+    //       {
+    //         this.detect2(blob);
+    //       }
+    //     }).catch(error => {
+
+    //     });
+    //   }
+
+    try {
+      var blob = await this.get_imageCapture().takePhoto();
+      if (blob)
+      {
+        await this.detect2(blob);
+      }
+    } catch (error) {
+      
+    }
   };
-  //#endregion
+
+  BarcodeReadControl.prototype.detect2 = async function (image) {
+    try {
+      this.clearDetected();
+      this.set_status("Detecting ...");
+      if (!this.get_isactive()) {
+        this.set_status("Detecting ... Error: not active.");
+      }
+      if (
+        image instanceof Blob ||
+        image instanceof HTMLImageElement ||
+        image instanceof HTMLCanvasElement ||
+        image instanceof ImageData
+      ) {
+        var img = await window.createImageBitmap(image);
+        var barcodes = await this.get_detector().detect(img);
+        this.clearDetected();
+        if (Array.isArray(barcodes) && barcodes.length > 0) {
+          this.set_status(
+            `Detected ${barcodes.length} codes`
+          );
+          this.$isdetected = true;
+          this.$detected = Array.createCopyOf(barcodes);
+        }
+        this.detectedevent.invoke(self, barcodes);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 })();
