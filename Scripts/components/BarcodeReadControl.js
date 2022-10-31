@@ -235,6 +235,47 @@
   };
   //#endregion
 
+  
+
+  BarcodeReadControl.prototype.onScanning = async function () {
+    //Show the div with canvas and initialize the chain
+    //this.get_videoObj().classList.remove('hidden');
+    await this.initScanning();
+    var barcodeDetector = this.get_detector();
+    var video = this.get_videoObj();
+    var isDetected = false;
+    function render() {
+      barcodeDetector
+    .detect(video)
+    .then((barcodes) => {
+      if (Array.isArray(barcodes) && barcodes.length > 0) {
+        barcodes.forEach((barcode) => {
+          console.log(barcode.rawValue);
+        });
+        return true;
+      }
+      else{
+        console.log("Nothing detected");
+      }
+    })
+    .catch(console.error);
+    return false;
+    }
+  
+    (function renderLoop() {
+      
+      if (!isDetected)
+      {
+        requestAnimationFrame(renderLoop);
+        isDetected = render();
+      }
+      else{
+        //clean up
+      }
+    })();
+    
+  };
+
   //#region Scanning from the camera
   BarcodeReadControl.prototype.initScanning = async function () {
 
@@ -258,77 +299,6 @@
     }
   };
 
-  BarcodeReadControl.prototype.onScanning = async function () {
-    //Show the div with canvas and initialize the chain
-    //this.get_videoObj().classList.remove('hidden');
-    await this.initScanning();
-    for (let index = 0; index < 1000; index++) {
-      if (!this.$isdetected)
-      {
-        console.log("Counter: " + index);
-        await this.onTakePhoto();
-      }    
-      else{
-        return;
-      }  
-    }
-    console.log("Nothing detected");
-  };
 
-  BarcodeReadControl.prototype.onTakePhoto = async function () {
-    // try {
-    //   var imageCapture = this.get_imageCapture();
-    //   const promise = imageCapture.takePhoto();
 
-    //   if (!promise && !(imageCapture.track.readyState != 'live' || !imageCapture.track.enabled || imageCapture.track.muted)) {
-    //     promise.then(blob => {
-    //       if (blob)
-    //       {
-    //         this.detect2(blob);
-    //       }
-    //     }).catch(error => {
-
-    //     });
-    //   }
-
-    try {
-      var blob = await this.get_imageCapture().takePhoto();
-      if (blob)
-      {
-        await this.detect2(blob);
-      }
-    } catch (error) {
-      
-    }
-  };
-
-  BarcodeReadControl.prototype.detect2 = async function (image) {
-    try {
-      this.clearDetected();
-      this.set_status("Detecting ...");
-      if (!this.get_isactive()) {
-        this.set_status("Detecting ... Error: not active.");
-      }
-      if (
-        image instanceof Blob ||
-        image instanceof HTMLImageElement ||
-        image instanceof HTMLCanvasElement ||
-        image instanceof ImageData
-      ) {
-        var img = await window.createImageBitmap(image);
-        var barcodes = await this.get_detector().detect(img);
-        this.clearDetected();
-        if (Array.isArray(barcodes) && barcodes.length > 0) {
-          this.set_status(
-            `Detected ${barcodes.length} codes`
-          );
-          this.$isdetected = true;
-          this.$detected = Array.createCopyOf(barcodes);
-        }
-        this.detectedevent.invoke(self, barcodes);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
 })();
