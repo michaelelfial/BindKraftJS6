@@ -167,60 +167,43 @@
   //#endregion
 
   //#region Detection
-  BarcodeReadControl.prototype.detect = function (image) {
+  BarcodeReadControl.prototype.detect = async function (image) {
     this.clearDetected();
     this.set_status("Detecting ...");
-    if (!this.get_isactive()) {
-      this.set_status("Detecting ... Error: not active.");
-      return Operation.Failed("BarcodeReadControl not active");
-    }
-    if (
-      image instanceof Blob ||
-      image instanceof HTMLImageElement ||
-      image instanceof HTMLCanvasElement ||
-      image instanceof ImageData
-    ) {
-      var op = Operation.From(true);
 
-      this.set_status("Detecting ... Trying ...");
-      var self = this;
-
-      window
-        .createImageBitmap(image)
-        .then((img) => {
-          self
-            .get_detector()
-            .detect(img)
-            .then((barcodes) => {
-              //barcodes.forEach((barcode) => console.log(barcode.rawValue));
-              self.clearDetected();
-              if (Array.isArray(barcodes) && barcodes.length > 0) {
-                self.set_status(
-                  `Detecting ... Trying ... Detected ${barcodes.length} codes`
-                );
-                console.log("Barcodes:", JSON.stringify(barcodes));
-                this.$isdetected = true;
-                self.$detected = Array.createCopyOf(barcodes);
-              }
-              self.detectedevent.invoke(self, barcodes);
-            })
-            .catch((err) => {
-              console.log(err);
-              self.set_status(
-                `Detecting ... Trying ... Failed to detect: ` + err
-              );
-            });
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-      return op;
-    } else {
-      this.set_status(`Detecting ... Error: unsupported argument type`);
-      return Operation.Failed(
-        "BarcodeReadControl - the argument type is not supported"
-      );
-    }
+    var op = new Operation('detect');
+    try {
+      if (!this.get_isactive()) {
+        this.set_status("Detecting ... Error: not active.");
+        op.CompleteOperation(false, "BarcodeReadControl not active");
+      }
+      var target = null;
+      if (image instanceof Blob) 
+      {
+        target = await window.createImageBitmap(image);
+      } 
+      else if(image instanceof HTMLImageElement || image instanceof HTMLCanvasElement || image instanceof ImageData || image instanceof HTMLVideoElement)
+      {
+        target = image;
+      }
+      else 
+      {
+        this.set_status(`Detecting ... Error: unsupported argument type`);
+        op.CompleteOperation(false, "BarcodeReadControl - the argument type is not supported");
+      }
+  
+      var barcodes = await this.get_detector().detect(target);
+      this.clearDetected();
+      if (Array.isArray(barcodes) && barcodes.length > 0) {
+        //TODO Stop the detection
+        this.$detected = Array.createCopyOf(barcodes);
+      }
+      this.detectedevent.invoke(this, barcodes);
+      op.CompleteOperation(true, barcodes);
+    } catch (error) {
+      op.CompleteOperation(false, error);
+    }   
+    return op;
   };
   BarcodeReadControl.prototype.onDetectSource = function () {
     if (this.get_source() != null) {
