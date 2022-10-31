@@ -17,7 +17,10 @@
     Base.apply(this, arguments);
   }
   BarcodeReadControl.Inherit(Base, "BarcodeReadControl")
+    .Implement(IUIControl)
     .Implement(ICustomParameterizationStdImpl, "formats", "autoactivate")
+    .Implement(ITemplateSourceImpl, new Defaults("templateName"),"autofill")
+    .ImplementProperty("fakedetect", new InitializeStringParameter("generate fake entires",null))
     .ImplementReadProperty(
       "functional",
       new InitializeBooleanParameter(
@@ -57,29 +60,31 @@
     .ImplementActiveProperty(
       "status",
       new InitializeStringParameter("various status reports", null)
-    )
+    ).Defaults({
+      templateName: "bindkraftjs6/control-barcoderead"
+    });
 
     // Scanning from camera
-    .ImplementProperty("videoObj", new Initialize("Video object", null))
-    .ImplementProperty("imageCapture", new Initialize("Image object", null))
-    .ImplementProperty(
-      "mediaStream",
-      new Initialize("mediaStream object", null)
-    )
-    .ImplementProperty(
-      "mediaDeviceIds",
-      new InitializeArray("List of media device ids", [])
-    )
-    .ImplementProperty(
-      "zoomLevel",
-      new InitializeNumericParameter("Current zoom level", 0)
-    )
-    .ImplementProperty(
-      "isdetected",
-      new InitializeBooleanParameter("If something detected", false)
-    );
+    // .ImplementProperty("videoObj", new Initialize("Video object", null))
+    // .ImplementProperty("imageCapture", new Initialize("Image object", null))
+    // .ImplementProperty(
+    //   "mediaStream",
+    //   new Initialize("mediaStream object", null)
+    // )
+    // .ImplementProperty(
+    //   "mediaDeviceIds",
+    //   new InitializeArray("List of media device ids", [])
+    // )
+    // .ImplementProperty(
+    //   "zoomLevel",
+    //   new InitializeNumericParameter("Current zoom level", 0)
+    // )
+    
 
   BarcodeReadControl.prototype.detectedevent = new InitializeEvent(
+    "Fired when something is detected (successfully), but not when cleared and so on."
+  );
+  BarcodeReadControl.prototype.barcodeevent = new InitializeEvent(
     "Fired when something is detected (successfully), but not when cleared and so on."
   );
 
@@ -91,6 +96,10 @@
         .Select((i, f) => (typeof f == "string" ? f.trim() : null));
     return null;
   };
+  BarcodeReadControl.prototype.get_hasdetected = function () {
+    var d = this.get_detected();
+    return (Array.isArray(d) && d.length > 0);
+  }
   BarcodeReadControl.prototype.$testEnvironment = function () {
     if ("BarcodeDetector" in window) {
       this.$functional = true;
@@ -116,6 +125,7 @@
   BarcodeReadControl.prototype.clearDetected = function () {
     this.$detected = [];
     this.set_status("Cleared the detected codes.");
+    this.detectedevent.invoke(this, null)
   };
   BarcodeReadControl.prototype.get_detected = function () {
     return this.$detected;
@@ -167,45 +177,64 @@
   //#endregion
 
   //#region Detection
-  BarcodeReadControl.prototype.detect = async function (image) {
+  
+  BarcodeReadControl.prototype.detect = function (image) {
+    if (typeof this.get_fakedetect() == "string" && this.get_fakedetect().length > 0) {
+      this.$detected = [{ rawValue: this.get_fakedetect() }];
+          this.barcodeevent.invoke(this, this.$detected[0]);
+          this.detectedevent.invoke(this, this.$detected);
+          this.set_fakedetect(null);
+          return Operation.From(this.$detected);
+    }
+    if (!this.get_isactive()) {
+      this.set_status("Detecting ... Error: not active.");
+      console.log("not active");
+      return Operation.Failed("Not active");
+    }
     this.clearDetected();
     this.set_status("Detecting ...");
 
-    var op = new Operation('detect');
-    try {
-      if (!this.get_isactive()) {
-        this.set_status("Detecting ... Error: not active.");
-        op.CompleteOperation(false, "BarcodeReadControl not active");
-      }
-      var target = null;
-      if (image instanceof Blob) 
-      {
-        target = await window.createImageBitmap(image);
-      } 
-      else if(image instanceof HTMLImageElement || image instanceof HTMLCanvasElement || image instanceof ImageData || image instanceof HTMLVideoElement)
-      {
-        target = image;
-      }
-      else 
-      {
-        this.set_status(`Detecting ... Error: unsupported argument type`);
-        op.CompleteOperation(false, "BarcodeReadControl - the argument type is not supported");
-      }
-  
-      var barcodes = await this.get_detector().detect(target);
-      this.clearDetected();
-      if (Array.isArray(barcodes) && barcodes.length > 0) {
-        //TODO Stop the detection
-        this.$detected = Array.createCopyOf(barcodes);
-      }
-      this.detectedevent.invoke(this, barcodes);
-      op.CompleteOperation(true, barcodes);
-    } catch (error) {
-      op.CompleteOperation(false, error);
-    }   
-    return op;
+    //var op = new Operation('detect');
+
+    return Operation.FromPromise( (async () => {
+      //try {
+        if (!this.get_isactive()) {
+          this.set_status("Detecting ... Error: not active.");
+          throw "BarcodeReadControl not active";
+        }
+        var target = null;
+        if (image instanceof Blob) 
+        {
+          target = await window.createImageBitmap(image);
+        } 
+        else if(image instanceof HTMLImageElement || image instanceof HTMLCanvasElement || image instanceof ImageData || image instanceof HTMLVideoElement)
+        {
+          target = image;
+        }
+        else 
+        {
+          this.set_status(`Detecting ... Error: unsupported argument type`);
+          throw "BarcodeReadControl - the argument type is not supported";
+        }
+    
+        var barcodes = await this.get_detector().detect(target);
+        this.clearDetected();
+        if (Array.isArray(barcodes) && barcodes.length > 0) {
+          //TODO Stop the detection
+          this.$detected = Array.createCopyOf(barcodes);
+          this.barcodeevent.invoke(this, barcodes[0]);
+        }
+        this.detectedevent.invoke(this, barcodes);
+        return barcodes;
+      //}
+      // catch (error) {
+      //   op.CompleteOperation(false, error);
+      // }   
+    })(),"detect");
+
   };
   BarcodeReadControl.prototype.onDetectSource = function () {
+    if (this.get_hasdetected()) return;
     if (this.get_source() != null) {
       this.set_status(`Detecting source ... `);
       var op = this.detect(this.get_source());
@@ -220,67 +249,67 @@
 
   
 
-  BarcodeReadControl.prototype.onScanning = async function () {
-    //Show the div with canvas and initialize the chain
-    //this.get_videoObj().classList.remove('hidden');
-    await this.initScanning();
-    var barcodeDetector = this.get_detector();
-    var video = this.get_videoObj();
-    var isDetected = false;
-    function render() {
-      barcodeDetector
-    .detect(video)
-    .then((barcodes) => {
-      if (Array.isArray(barcodes) && barcodes.length > 0) {
-        barcodes.forEach((barcode) => {
-          console.log(barcode.rawValue);
-        });
-        return true;
-      }
-      else{
-        console.log("Nothing detected");
-      }
-    })
-    .catch(console.error);
-    return false;
-    }
+  // BarcodeReadControl.prototype.onScanning = async function () {
+  //   //Show the div with canvas and initialize the chain
+  //   //this.get_videoObj().classList.remove('hidden');
+  //   await this.initScanning();
+  //   var barcodeDetector = this.get_detector();
+  //   var video = this.get_videoObj();
+  //   var isDetected = false;
+  //   function render() {
+  //     barcodeDetector
+  //   .detect(video)
+  //   .then((barcodes) => {
+  //     if (Array.isArray(barcodes) && barcodes.length > 0) {
+  //       barcodes.forEach((barcode) => {
+  //         console.log(barcode.rawValue);
+  //       });
+  //       return true;
+  //     }
+  //     else{
+  //       console.log("Nothing detected");
+  //     }
+  //   })
+  //   .catch(console.error);
+  //   return false;
+  //   }
   
-    (function renderLoop() {
+  //   (function renderLoop() {
       
-      if (!isDetected)
-      {
-        requestAnimationFrame(renderLoop);
-        isDetected = render();
-      }
-      else{
-        //clean up
-      }
-    })();
+  //     if (!isDetected)
+  //     {
+  //       requestAnimationFrame(renderLoop);
+  //       isDetected = render();
+  //     }
+  //     else{
+  //       //clean up
+  //     }
+  //   })();
     
-  };
+  // };
 
   //#region Scanning from the camera
-  BarcodeReadControl.prototype.initScanning = async function () {
+  // BarcodeReadControl.prototype.initScanning = async function () {
 
-    var constraints = {
-      audio: false,
-      video: { 
-          //deviceId: videoSource ? { exact: videoSource } : undefined,
-          facingMode: { exact: "environment" }
-        }
-    };
+  //   var constraints = {
+  //     audio: false,
+  //     video: { 
+  //         //deviceId: videoSource ? { exact: videoSource } : undefined,
+  //         facingMode: { exact: "environment" }
+  //       }
+  //   };
 
-    try {
-      var stream = await navigator.mediaDevices.getUserMedia(constraints);
+  //   try {
+  //     var stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      this.set_mediaStream(stream);
-      this.get_videoObj().srcObject = stream;
-      this.set_imageCapture(new ImageCapture(stream.getVideoTracks()[0]));
-      /* use the stream */
-    } catch (err) {
-      /* handle the error */
-    }
-  };
+  //     this.set_mediaStream(stream);
+  //     this.get_videoObj().srcObject = stream;
+  //     this.set_imageCapture(new ImageCapture(stream.getVideoTracks()[0]));
+  //     /* use the stream */
+  //   } catch (err) {
+  //     /* handle the error */
+  //   }
+  //};
 
 
 

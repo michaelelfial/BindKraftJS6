@@ -9,11 +9,15 @@
     Base.apply(this, arguments);
   }
   BarcodeReaderControl.Inherit(Base, "BarcodeReaderControl")
+    .Implement(IUIControl)
     .Implement(ICustomParameterizationStdImpl, "formats", "autoactivate")
-    
+    .Implement(ITemplateSourceImpl, new Defaults("templateName"),"autofill")
     .ImplementProperty("isavailable", new InitializeBooleanParameter("Indicates video source is available", false))
     .ImplementProperty("videoObj", new Initialize("Video object", null))
-    .ImplementProperty("mediaStream", new Initialize("Camera stream", null));
+    .ImplementProperty("mediaStream", new Initialize("Camera stream", null))
+    .Defaults({
+      templateName: "bindkraftjs6/control-barcodereader"
+    });
 
   BarcodeReaderControl.prototype.detectedevent = new InitializeEvent(
     "Fired when something is detected (successfully), but not when cleared and so on."
@@ -32,14 +36,17 @@
 
     video.addEventListener('canplay', (event) => {
       this.set_isavailable(true);
+      this.streamavailableevent.invoke(this, null);
     });
 
     video.addEventListener('ended', (event) => {
       this.set_isavailable(false);
+      this.streamavailableevent.invoke(this, null);
     });
 
     video.addEventListener('error', (event) => {
       this.set_isavailable(false);
+      this.streamavailableevent.invoke(this, null);
     });
   };
   
@@ -95,12 +102,12 @@
 
   //#region Scanning from the camera
   BarcodeReaderControl.prototype.startScanning = async function () {
-
+    if (this.get_mediaStream()) return;
     var constraints = {
       audio: false,
       video: { 
           //deviceId: videoSource ? { exact: videoSource } : undefined,
-          facingMode: { exact: "environment" }
+          facingMode: { ideal: "environment" }
         }
     };
 
@@ -113,10 +120,14 @@
       /* use the stream */
     } catch (err) {
       /* handle the error */
+      this.stopScanning();
     }
   };
 
   BarcodeReaderControl.prototype.stopScanning = async function () {
+    // TODO stop the tracks and maybe stop the video element first
+    this.set_mediaStream(null);
+    this.get_videoObj().srcObject = null;
 
   };
 
