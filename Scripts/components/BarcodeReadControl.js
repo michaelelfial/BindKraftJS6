@@ -12,35 +12,11 @@
     .Implement(ICustomParameterizationStdImpl, "formats", "autoactivate")
     .Implement(ITemplateSourceImpl, new Defaults("templateName"),"autofill")
     .ImplementProperty("fakedetect", new InitializeStringParameter("generate fake entires",null))
-    .ImplementReadProperty(
-      "functional",
-      new InitializeBooleanParameter(
-        "Indicates if the control is functional under the current conditions.",
-        false
-      )
-    )
-    .ImplementReadProperty(
-      "autoactivate",
-      new InitializeBooleanParameter(
-        "If passed as a parameter activates the control on creation. Should not be used in bindings!",
-        true
-      )
-    )
-    .ImplementProperty(
-      "formats",
-      new InitializeArray(
-        "List of formats to detect, default is qr_code, can be coma separated string too.",
-        ["qr_code"]
-      )
-    )
-    .ImplementReadProperty(
-      "detector",
-      new Initialize("Barcode detector when active.", null)
-    )
-    .ImplementProperty(
-      "source",
-      new Initialize("Source to observe when asked."),
-      null,
+    .ImplementReadProperty("functional", new InitializeBooleanParameter("Indicates if the control is functional under the current conditions.", false))
+    .ImplementReadProperty("autoactivate", new InitializeBooleanParameter("If passed as a parameter activates the control on creation. Should not be used in bindings!", true))
+    .ImplementProperty("formats", new InitializeArray("List of formats to detect, default is qr_code, can be coma separated string too.", ["qr_code"]))
+    .ImplementReadProperty("detector", Initialize("Barcode detector when active.", null))
+    .ImplementProperty("source", new Initialize("Source to observe when asked."), null, 
       function (oval, newval) {
         if (newval != null) {
           this.callAsync(this.onDetectSource);
@@ -48,29 +24,10 @@
       },
       true
     )
-    .ImplementActiveProperty(
-      "status",
-      new InitializeStringParameter("various status reports", null)
-    ).Defaults({
+    .ImplementActiveProperty("status", new InitializeStringParameter("various status reports", null))
+    .Defaults({
       templateName: "bindkraftjs6/control-barcoderead"
-    });
-
-    // Scanning from camera
-    // .ImplementProperty("videoObj", new Initialize("Video object", null))
-    // .ImplementProperty("imageCapture", new Initialize("Image object", null))
-    // .ImplementProperty(
-    //   "mediaStream",
-    //   new Initialize("mediaStream object", null)
-    // )
-    // .ImplementProperty(
-    //   "mediaDeviceIds",
-    //   new InitializeArray("List of media device ids", [])
-    // )
-    // .ImplementProperty(
-    //   "zoomLevel",
-    //   new InitializeNumericParameter("Current zoom level", 0)
-    // )
-    
+    });    
 
   BarcodeReadControl.prototype.detectedevent = new InitializeEvent(
     "Fired when something is detected (successfully), but not when cleared and so on."
@@ -87,10 +44,12 @@
         .Select((i, f) => (typeof f == "string" ? f.trim() : null));
     return null;
   };
+
   BarcodeReadControl.prototype.get_hasdetected = function () {
     var d = this.get_detected();
     return (Array.isArray(d) && d.length > 0);
-  }
+  };
+
   BarcodeReadControl.prototype.$testEnvironment = function () {
     if ("BarcodeDetector" in window) {
       this.$functional = true;
@@ -102,6 +61,7 @@
     }
     return this.get_functional();
   };
+
   BarcodeReadControl.prototype.init = function () {
     this.$testEnvironment();
     if (this.get_functional() && this.get_autoactivate()) {
@@ -110,17 +70,21 @@
       });
     }
   };
+  
   BarcodeReadControl.prototype.$detected = new InitializeArray(
     "This array will be changed as new detection occurs"
   );
+
   BarcodeReadControl.prototype.clearDetected = function () {
     this.$detected = [];
     this.set_status("Cleared the detected codes.");
     this.detectedevent.invoke(this, null)
   };
+
   BarcodeReadControl.prototype.get_detected = function () {
     return this.$detected;
   };
+
   BarcodeReadControl.prototype.get_firstDetected = function () {
     var d = this.get_detected();
     if (Array.isArray(d) && d.length > 0) {
@@ -128,6 +92,7 @@
     }
     return null;
   };
+
   BarcodeReadControl.prototype.get_firstDetectedValue = function () {
     var d = this.get_detected();
     if (Array.isArray(d) && d.length > 0) {
@@ -140,6 +105,7 @@
   BarcodeReadControl.prototype.get_isactive = function () {
     return this.get_detector() != null;
   };
+
   BarcodeReadControl.prototype.Activate = function () {
     if (!this.get_functional()) return false;
     this.clearDetected();
@@ -159,12 +125,14 @@
       return false;
     }
   };
+
   BarcodeReadControl.prototype.Deactivate = function () {
     if (this.$detector != null) {
       this.set_status("Deactivated");
       this.$detector = null;
     }
   };
+  
   //#endregion
 
   //#region Detection
