@@ -75,8 +75,10 @@
 
   MediaReadControl.prototype.stopScanning = async function () {
     // TODO stop the tracks and maybe stop the video element first
-    // this.set_mediaStream(null);
-    // this.get_videoObj().srcObject = null;
+    this.set_isavailable(false);
+    this.streamavailableevent.invoke(this, null);
+    this.set_mediaStream(null);
+    this.get_videoObj().srcObject = null;
 
   };
 })();
