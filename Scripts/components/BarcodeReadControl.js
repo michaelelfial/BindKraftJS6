@@ -132,7 +132,7 @@
       this.$detector = null;
     }
   };
-  
+
   //#endregion
 
   //#region Detection
