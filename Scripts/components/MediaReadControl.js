@@ -5,10 +5,10 @@
   /**
    * This control will do nothing if the browser does not support Barcodes
    */
-  function BarcodeReaderControl() {
+  function MediaReadControl() {
     Base.apply(this, arguments);
   }
-  BarcodeReaderControl.Inherit(Base, "BarcodeReaderControl")
+  MediaReadControl.Inherit(Base, "MediaReadControl")
     .Implement(IUIControl)
     .Implement(ICustomParameterizationStdImpl, "formats", "autoactivate")
     .Implement(ITemplateSourceImpl, new Defaults("templateName"),"autofill")
@@ -16,22 +16,22 @@
     .ImplementProperty("videoObj", new Initialize("Video object", null))
     .ImplementProperty("mediaStream", new Initialize("Camera stream", null))
     .Defaults({
-      templateName: "bindkraftjs6/control-barcodereader"
+      templateName: "bindkraftjs6/control-mediaread"
     });
 
-  BarcodeReaderControl.prototype.detectedevent = new InitializeEvent(
+  MediaReadControl.prototype.detectedevent = new InitializeEvent(
     "Fired when something is detected (successfully), but not when cleared and so on."
   );
 
-  BarcodeReaderControl.prototype.streamavailableevent = new InitializeEvent(
+  MediaReadControl.prototype.streamavailableevent = new InitializeEvent(
     "Fired when something is detected (successfully), but not when cleared and so on."
   );
 
-  BarcodeReaderControl.prototype.init = function () {
+  MediaReadControl.prototype.init = function () {
     
   };
 
-  BarcodeReaderControl.prototype.finalinit = function () {
+  MediaReadControl.prototype.finalinit = function () {
     var video = this.get_videoObj();
 
     video.addEventListener('canplay', (event) => {
@@ -55,7 +55,7 @@
 
   
 
-  BarcodeReaderControl.prototype.onScanning = async function () {
+  MediaReadControl.prototype.onScanning = async function () {
     //Show the div with canvas and initialize the chain
     //this.get_videoObj().classList.remove('hidden');
     await this.initScanning();
@@ -101,7 +101,7 @@
 
 
   //#region Scanning from the camera
-  BarcodeReaderControl.prototype.startScanning = async function () {
+  MediaReadControl.prototype.startScanning = async function () {
     if (this.get_mediaStream()) return;
     var constraints = {
       audio: false,
@@ -124,7 +124,7 @@
     }
   };
 
-  BarcodeReaderControl.prototype.stopScanning = async function () {
+  MediaReadControl.prototype.stopScanning = async function () {
     // TODO stop the tracks and maybe stop the video element first
     this.set_mediaStream(null);
     this.get_videoObj().srcObject = null;
