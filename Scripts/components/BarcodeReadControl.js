@@ -15,7 +15,7 @@
     .ImplementReadProperty("functional", new InitializeBooleanParameter("Indicates if the control is functional under the current conditions.", false))
     .ImplementReadProperty("autoactivate", new InitializeBooleanParameter("If passed as a parameter activates the control on creation. Should not be used in bindings!", true))
     .ImplementProperty("formats", new InitializeArray("List of formats to detect, default is qr_code, can be coma separated string too.", ["qr_code"]))
-    .ImplementReadProperty("detector", Initialize("Barcode detector when active.", null))
+    .ImplementReadProperty("detector", new Initialize("Barcode detector when active.", null))
     .ImplementProperty("source", new Initialize("Source to observe when asked."), null, 
       function (oval, newval) {
         if (newval != null) {
