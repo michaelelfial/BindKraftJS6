@@ -1,0 +1,18 @@
+@use "containers" as module-containers;
+@use "../../../Modules/ThemeStyles/Materials" as *;
+@use "../../../Modules/ThemeStyles/Materials/api" as *;
+@use "../../../Modules/ThemeStyles/Materials/parts" as *;
+@use "../../../Modules/ThemeStyles/Themes/PharmaHelp/configuration";
+@use "../../../Modules/ThemeStyles/Themes/PharmaHelp/containers";
+
+@use "barcode";
+
+@include theme(containers.$containers, configuration.$theme, ".p") {
+  @include addContainers(module-containers.$containers);
+  @include patchContainer(reset); // Not needed: using ($choices) {}
+
+
+  @include barcode.custom();
+
+}
+
