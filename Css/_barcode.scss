@@ -1,0 +1,10 @@
+@use "containers"as module-containers;
+@use "../../../Modules/ThemeStyles/Materials"as *;
+@use "../../../Modules/ThemeStyles/Materials/api"as *;
+@use "../../../Modules/ThemeStyles/Materials/parts"as *;
+
+@mixin custom() {
+    @include containerGen(c-barcode) using ($choices) {
+        
+    }
+}
