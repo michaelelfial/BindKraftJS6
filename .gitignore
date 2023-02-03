@@ -1,3 +1,4 @@
 *.css
 **/css/*.dep
 **/css/*.css.map
+**/css/*.css
