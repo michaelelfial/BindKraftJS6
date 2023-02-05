@@ -55,11 +55,13 @@
     if (this.get_mediaStream()) return;
     var constraints = {
       audio: false,
-      video: { 
-          //deviceId: videoSource ? { exact: videoSource } : undefined,
-          facingMode: { ideal: "environment" }
-        }
+      video: {
+        facingMode: { ideal: "environment" }
+      }
     };
+    //deviceId: videoSource ? { exact: videoSource } : undefined,
+          //facingMode: { ideal: "environment" }
+
 
     try {
       var stream = await navigator.mediaDevices.getUserMedia(constraints);

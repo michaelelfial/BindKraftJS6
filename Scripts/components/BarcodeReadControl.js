@@ -85,7 +85,7 @@
     return this.$detected;
   };
 
-  BarcodeReadControl.prototype.get_firstDetected = function () {
+  BarcodeReadControl.prototype.get_firstdetected = function () {
     var d = this.get_detected();
     if (Array.isArray(d) && d.length > 0) {
       return d[0];
@@ -93,7 +93,7 @@
     return null;
   };
 
-  BarcodeReadControl.prototype.get_firstDetectedValue = function () {
+  BarcodeReadControl.prototype.get_firstdetectedvalue = function () {
     var d = this.get_detected();
     if (Array.isArray(d) && d.length > 0) {
       return d[0].rawValue;
