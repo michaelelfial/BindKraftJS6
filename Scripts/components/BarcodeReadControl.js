@@ -14,6 +14,7 @@
     .ImplementProperty("fakedetect", new InitializeStringParameter("generate fake entires",null))
     .ImplementReadProperty("functional", new InitializeBooleanParameter("Indicates if the control is functional under the current conditions.", false))
     .ImplementReadProperty("autoactivate", new InitializeBooleanParameter("If passed as a parameter activates the control on creation. Should not be used in bindings!", true))
+    // Getter is overriden below - see get_formats
     .ImplementProperty("formats", new InitializeArray("List of formats to detect, default is qr_code, can be coma separated string too.", ["qr_code"]))
     .ImplementReadProperty("detector", new Initialize("Barcode detector when active.", null))
     .ImplementProperty("source", new Initialize("Source to observe when asked."), null, 
@@ -35,7 +36,11 @@
   BarcodeReadControl.prototype.barcodeevent = new InitializeEvent(
     "Fired when something is detected (successfully), but not when cleared and so on."
   );
-
+  /**
+   * Always returns either array or null - if no codes are configured. The property can be set to a string with coma delimited
+   * format names. get_formats will parse and return an array of them.
+   * @returns {Array<string>|null} Returns an array of all the configured barcode formats to detect.
+   */
   BarcodeReadControl.prototype.get_formats = function () {
     if (Array.isArray(this.$formats)) return this.$formats;
     if (typeof this.$formats == "string")
@@ -44,14 +49,27 @@
         .Select((i, f) => (typeof f == "string" ? f.trim() : null));
     return null;
   };
-
+  /**
+   * Indicates if there are any detected barcodes so far. Useful for UI control purposes.
+   * @returns {boolean} Returns true if there are any barcodes detected, otherwise false.
+   */
   BarcodeReadControl.prototype.get_hasdetected = function () {
     var d = this.get_detected();
     return (Array.isArray(d) && d.length > 0);
   };
 
-  BarcodeReadControl.prototype.$testEnvironment = function () {
+  /** For outside usage
+   * Returns true if barcode detection is supported (if it truly works cannot be detected).
+   */
+  BarcodeReadControl.TestEnvironment = function() {
     if ("BarcodeDetector" in window) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  BarcodeReadControl.prototype.$testEnvironment = function () {
+    if (BarcodeReadControl.TestEnvironment()) {
       this.$functional = true;
       this.$status = "BarcodeDetector is available. The control is functional.";
     } else {
