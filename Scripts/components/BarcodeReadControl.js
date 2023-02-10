@@ -199,7 +199,8 @@
         if (Array.isArray(barcodes) && barcodes.length > 0) {
           //TODO Stop the detection
           this.$detected = Array.createCopyOf(barcodes);
-          this.barcodeevent.invoke(this, barcodes[0]);
+          var barcode = barcodes[0];
+          this.barcodeevent.invoke(this, barcode);
         }
         this.detectedevent.invoke(this, barcodes);
         return barcodes;
