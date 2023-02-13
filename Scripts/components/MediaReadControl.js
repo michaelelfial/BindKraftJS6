@@ -56,7 +56,14 @@
     var constraints = {
       audio: false,
       video: {
-        facingMode: { ideal: "environment" }
+        facingMode: { ideal: "environment" },
+        width: {
+          min: 1280
+        },
+        height: {
+            min: 720
+        },
+        focusMode: true
       }
     };
     //deviceId: videoSource ? { exact: videoSource } : undefined,
@@ -68,6 +75,7 @@
 
       this.set_mediaStream(stream);
       this.get_videoObj().srcObject = stream;
+      var stop = () => video.srcObject && video.srcObject.getTracks().map(t => t.stop());
       // event canplay executes the chain further
     } catch (err) {
       /* handle the error */
@@ -79,6 +87,10 @@
     // TODO stop the tracks and maybe stop the video element first
     this.set_isavailable(false);
     this.streamavailableevent.invoke(this, null);
+    if (this.get_videoObj().srcObject)
+    {
+      this.get_videoObj().srcObject.getTracks().map(t=>t.stop());
+    }
     this.set_mediaStream(null);
     this.get_videoObj().srcObject = null;
 
