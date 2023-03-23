@@ -200,6 +200,13 @@
           //TODO Stop the detection
           this.$detected = Array.createCopyOf(barcodes);
           var barcode = barcodes[0];
+          var format = barcode.format;
+          if (format == 'data_matrix'){
+            if (barcode.rawValue.length >= 18)
+            {
+              barcode.rawValue = barcode.rawValue.substr(4, 13);
+            }
+          }
           this.barcodeevent.invoke(this, barcode);
         }
         this.detectedevent.invoke(this, barcodes);
