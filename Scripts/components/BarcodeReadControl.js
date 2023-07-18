@@ -204,7 +204,7 @@
           if (format == 'data_matrix'){
             if (barcode.rawValue.length >= 18)
             {
-              barcode.rawValue = barcode.rawValue.substr(4, 13);
+              barcode.rawValue = barcode.rawValue.substr(3, 13); // Is it true? barcode.rawValue.substr(4, 13)
             }
           }
           this.barcodeevent.invoke(this, barcode);
