@@ -2,3 +2,4 @@
 
 //#using "BarcodeReadControl.js"
 //#using "MediaReadControl.js"
+//#using "InitialsControl.js"
