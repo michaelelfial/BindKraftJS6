@@ -37,7 +37,7 @@
                 if (re instanceof RegExp) {
                     var m = re.exec(ns);
                     if (m) {
-                        this.set_firstn(m[1]);
+                        this.set_first(m[1]);
                     } else {
                         this.set_last(m[2]);
                     }
@@ -60,6 +60,7 @@
             } else {
                 s =this.get_noname();
             }
+            return s;
         }
         InitialsControl.prototype.get_hasname = function() {
             var n = 0;
