@@ -54,13 +54,33 @@
         }
     }
     function matchRE(arrRE,text,bExtInfo) {
-        if (typeof text == "string") {
+        if (typeof text == "string" && text.length > 0) {
             if (arrRE != null) {
-
+                var result = {
+                    success: false,
+                    full: false
+                };
+                var i,t;//c = text[0]
+                i = arrRE.findIndex((re, idx, are) => (idx + text.length <= are.length) && are.slice(idx,idx + text.length).every((r,_i) => r.test(text[_i])));
+                if (i >= 0) {
+                    if (bExtInfo) {
+                        result.success = true;
+                        if (i == 0 && text.length == arrRE.length) result.full = true;
+                        result.start = i;
+                        result.end = i + text.length - 1;
+                        return result;
+                    } else {
+                        return true;
+                    }
+                } else {
+                    if (bExtInfo) return result;
+                    return false;
+                }
             } else { // No condition
                 if (bExtInfo) {
                     return {
                         success: true,
+                        full: true,
                         start: 0,
                         end: text.length -1
                     };
@@ -69,13 +89,20 @@
                 }
 
             }
+        } else {
+            if (bExtInfo) {
+                return {
+                    success: true,
+                    full: (arrRE == null || arrRE.length == 0),
+                    start: 0,
+                    end: 0
+                };
+            } else {
+                return true;
+            }
         }
     }
 
-    function _patternTest(patt,v) {
-
-
-    }
     function _nullState() {
         return {
             start:0,
@@ -89,10 +116,28 @@
     }
     MaskedInput.Inherit(Base,"MaskedInput")
         .Implement(ICustomParameterizationStdImpl, "pattern")
-        .ImplementProperty("pattern", new InitializeStringParameter("use regular expression", null)) //aaAAdd
+        .ImplementProperty("pattern", new InitializeStringParameter("use regular expression", null),null, function(ov,nv){
+            this.$pattern_re = null; // cause regeneration
+        }) //aaAAdd
         .ImplementProperty("advanced", new InitializeBooleanParameter("Use advanced change detection", false))
         .ImplementProperty("condition"); // Callback that can check additional conditions
 
+    MaskedInput.prototype.get_value = function() {
+        return this.root.value;
+    }
+    MaskedInput.prototype.set_value = function(v) {
+        this.root.value = v;
+    }
+    MaskedInput.prototype.get_iscorrect = function() {
+        var r = matchRE(this.$get_re(),this.root.value,true);
+        if (r.success && r.full) return true;
+        return false;
+    }
+    MaskedInput.prototype.get_ispartialycorrect = function() {
+        var r = matchRE(this.$get_re(),this.root.value,true);
+        if (r.success) return true;
+        return false;
+    }
     MaskedInput.prototype.init = function() {
         if (this.root instanceof HTMLInputElement) {
             this.root.addEventListener("beforeinput", this.onBeforeInput);
@@ -104,6 +149,13 @@
     
     MaskedInput.prototype.get_currentvalue = function() {
         return this.root.value;
+    }
+    MaskedInput.prototype.$pattern_re = null;
+    MaskedInput.prototype.$get_re = function() {
+        if (this.$pattern_re == null) {
+            this.$pattern_re = genRE(this.get_pattern());
+        }
+        return this.$pattern_re;
     }
     MaskedInput.prototype.$beforeState = _nullState();
     MaskedInput.prototype.$afterState = _nullState();
@@ -118,59 +170,67 @@
         }
         return state;
     }
-    MaskedInput.prototype.$whatChanged = function(changeType, data) {
-        var before = this.$beforeState;
-        var after = this.$afterState;
-        change = {};
-        if (this.get_advanced()) {
-            if (before.value == after.value) {
-                change.value = "";
-                change.from = 0;
-                change.to = 0;
-            } else {
-                var longer = Math.max(before.value.length,after.value.length);
-                if (changeType.startsWith("insert")) {
+    // MaskedInput.prototype.$whatChanged = function(changeType, data) {
+    //     var before = this.$beforeState;
+    //     var after = this.$afterState;
+    //     change = {};
+    //     if (this.get_advanced()) {
+    //         if (before.value == after.value) {
+    //             change.value = "";
+    //             change.from = 0;
+    //             change.to = 0;
+    //         } else {
+    //             var longer = Math.max(before.value.length,after.value.length);
+    //             if (changeType.startsWith("insert")) {
 
-                } else if (changeType.startsWith("delete")) {
+    //             } else if (changeType.startsWith("delete")) {
 
-                } else if (changeType.startsWith("history")) {
+    //             } else if (changeType.startsWith("history")) {
 
-                } else {
+    //             } else {
 
-                }
+    //             }
                 
-            }
-        } else {
-            if (before.value == after.value) {
-                change.value = "";
-                change.from = 0;
-                change.to = 0;
-            } else {
-                //if (after.start)
-            }
-        }
-    }
+    //         }
+    //     } else {
+    //         if (before.value == after.value) {
+    //             change.value = "";
+    //             change.from = 0;
+    //             change.to = 0;
+    //         } else {
+    //             //if (after.start)
+    //         }
+    //     }
+    // }
     MaskedInput.prototype.g = genRE;
     MaskedInput.prototype.$checkAndCorrect = function() {
+        if (this.get_advanced()) {
+            // Not implemented
+            throw "Advanced mode not implemented yet";
+        } else { // Check for partial match and rollback if not matching
+            var r = matchRE(this.$get_re(),this.$afterState.value,true);
+            if (r.success) {
+                if (BaseObject.isCallback(this.get_condition())) {
+                    if (BaseObject.callCallback(this.get_condition(),this,this.$afterState.value) === false) {
+                        r.success = false;
+                    }
+                }
+
+            }
+            //console.log(r);
+            if (!r.success) {
+                this.root.value = this.$beforeState.value;
+            }
+        }
 
     }
     MaskedInput.prototype.onBeforeInput = new InitializeMethodCallback("handles before input", function(e) {
         this.$beforeState = this.$inputState();
         this.$afterState = this.$beforeState; // Equalize them
-        console.log(`bi:${e.inputType}[${e.data}](${this.root.value})`);
-        console.log(e);
-        //this.root.value - current value
-        //this.root.selectionStart
-        // this.root.selectionEnd
     });
     MaskedInput.prototype.onAfterInput = new InitializeMethodCallback("handles before input", function(e) {
         this.$afterState = this.$inputState();
         this.$checkAndCorrect();
-        console.log(`ai:${e.inputType}[${e.data}](${this.root.value})`);
-        console.log(e);
-        //this.root.value - current value
-        //this.root.selectionStart
-        // this.root.selectionEnd
     });
 })();
 
