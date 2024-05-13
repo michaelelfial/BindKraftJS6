@@ -52,9 +52,26 @@
             } 
             return null;
         }
-        
-
     }
+    function matchRE(arrRE,text,bExtInfo) {
+        if (typeof text == "string") {
+            if (arrRE != null) {
+
+            } else { // No condition
+                if (bExtInfo) {
+                    return {
+                        success: true,
+                        start: 0,
+                        end: text.length -1
+                    };
+                } else {
+                    return true;
+                }
+
+            }
+        }
+    }
+
     function _patternTest(patt,v) {
 
 
