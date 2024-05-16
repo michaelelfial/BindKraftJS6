@@ -115,10 +115,11 @@
         Base.apply(this,args);
     }
     MaskedInput.Inherit(Base,"MaskedInput")
-        .Implement(ICustomParameterizationStdImpl, "pattern")
+        .Implement(ICustomParameterizationStdImpl, "pattern","selectonfocus")
         .ImplementProperty("pattern", new InitializeStringParameter("use regular expression", null),null, function(ov,nv){
             this.$pattern_re = null; // cause regeneration
         }) //aaAAdd
+        .ImplementProperty("selectonfocus", new InitializeBooleanParameter("If true selects the text on focus", true))
         .ImplementProperty("advanced", new InitializeBooleanParameter("Use advanced change detection", false))
         .ImplementProperty("condition"); // Callback that can check additional conditions
 
@@ -141,7 +142,8 @@
     MaskedInput.prototype.init = function() {
         if (this.root instanceof HTMLInputElement) {
             this.root.addEventListener("beforeinput", this.onBeforeInput);
-            this.root.addEventListener("input", this.onAfterInput)
+            this.root.addEventListener("input", this.onAfterInput);
+            this.root.addEventListener("focus",this.onFocus);
         } else {
             this.LASTERROR("MaskedInput can be placed only on text inputs");
         }
@@ -209,7 +211,7 @@
             throw "Advanced mode not implemented yet";
         } else { // Check for partial match and rollback if not matching
             var r = matchRE(this.$get_re(),this.$afterState.value,true);
-            if (r.success) {
+            if (r.success && r.full) {
                 if (BaseObject.isCallback(this.get_condition())) {
                     if (BaseObject.callCallback(this.get_condition(),this,this.$afterState.value) === false) {
                         r.success = false;
@@ -231,6 +233,11 @@
     MaskedInput.prototype.onAfterInput = new InitializeMethodCallback("handles before input", function(e) {
         this.$afterState = this.$inputState();
         this.$checkAndCorrect();
+    });
+    MaskedInput.prototype.onFocus = new InitializeMethodCallback("handles on foucus", function(e) {
+        if (this.get_selectonfocus()) {
+            this.root.select();
+        }
     });
 })();
 
